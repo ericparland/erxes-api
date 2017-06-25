@@ -136,6 +136,7 @@ const typeDefs = `
       attachments: [AttachmentInput]): Message
 
     simulateInsertMessage(messageId: String): Message
+    notify: String
 
     readConversationMessages(conversationId: String): String
 

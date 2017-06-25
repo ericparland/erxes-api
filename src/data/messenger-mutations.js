@@ -17,6 +17,10 @@ export default {
     });
   },
 
+  notify() {
+    pubsub.publish('notification');
+  },
+
   /*
    * create or update customer info, when connection establish
    */
