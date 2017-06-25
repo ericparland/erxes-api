@@ -77,6 +77,7 @@ const MessageSchema = mongoose.Schema({
   createdAt: Date,
   isCustomerRead: Boolean,
   internal: Boolean,
+  engageData: Object,
   formWidgetData: Object,
 });
 
@@ -99,6 +100,22 @@ const FormFieldSchema = mongoose.Schema({
   order: Number,
 });
 
+const EngageMessageSchema = mongoose.Schema({
+  _id: { type: String, unique: true, default: () => Random.id() },
+  kind: String,
+  segmentId: String,
+  customerIds: [String],
+  title: String,
+  fromUserId: String,
+  method: String,
+  email: Object,
+  messenger: Object,
+  isDraft: Boolean,
+  isLive: Boolean,
+  stopDate: Date,
+  deliveryReports: Object,
+});
+
 const Users = mongoose.model('users', UserSchema);
 const Brands = mongoose.model('brands', BrandSchema);
 const Integrations = mongoose.model('integrations', IntegrationSchema);
@@ -107,5 +124,16 @@ const Conversations = mongoose.model('conversations', ConversationSchema);
 const Messages = mongoose.model('conversation_messages', MessageSchema);
 const Forms = mongoose.model('forms', FormSchema);
 const FormFields = mongoose.model('form_fields', FormFieldSchema);
+const EngageMessages = mongoose.model('engage_messages', EngageMessageSchema);
 
-export { Users, Brands, Integrations, Customers, Conversations, Messages, Forms, FormFields };
+export {
+  Users,
+  Brands,
+  Integrations,
+  Customers,
+  Conversations,
+  Messages,
+  Forms,
+  FormFields,
+  EngageMessages,
+};

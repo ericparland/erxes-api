@@ -3,6 +3,17 @@ import { Integrations, Conversations, Messages, Users } from './connectors';
 import { checkAvailability } from './check-availability';
 import { getIntegration } from './utils';
 
+const unreadMessagesQuery = (conversations) => {
+  const conversationIds = _.pluck(conversations, '_id');
+
+  return {
+    conversationId: { $in: conversationIds },
+    userId: { $exists: true },
+    internal: false,
+    isCustomerRead: { $exists: false },
+  }
+}
+
 export default {
   getMessengerIntegration(root, args) {
     return getIntegration(args.brandCode, 'messenger');
@@ -24,6 +35,18 @@ export default {
     }).sort({ createdAt: 1 });
   },
 
+  lastUnreadMessage(root, args) {
+    const { integrationId, customerId } = args;
+
+    // find conversations
+    return Conversations.find({
+      integrationId,
+      customerId,
+
+    // find read messages count
+    }).then(convs => Messages.findOne(unreadMessagesQuery(convs)));
+  },
+
   unreadCount(root, { conversationId }) {
     return Messages.count({
       conversationId,
@@ -40,17 +63,9 @@ export default {
     return Conversations.find({
       integrationId,
       customerId,
-    }).then(conversations => {
-      const conversationIds = _.pluck(conversations, '_id');
 
-      // find read messages count
-      return Messages.count({
-        conversationId: { $in: conversationIds },
-        userId: { $exists: true },
-        internal: false,
-        isCustomerRead: { $exists: false },
-      });
-    });
+    // find read messages count
+    }).then(convs => Messages.count(unreadMessagesQuery(convs)));
   },
 
   conversationLastStaff(root, args) {

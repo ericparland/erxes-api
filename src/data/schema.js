@@ -70,6 +70,7 @@ const typeDefs = `
     createdAt: Date
     attachments: [Attachment]
     internal: Boolean
+    engageData: JSON
   }
 
   type Field {
@@ -95,6 +96,7 @@ const typeDefs = `
   type RootQuery {
     conversations(integrationId: String!, customerId: String!): [Conversation]
     getMessengerIntegration(brandCode: String!): Integration
+    lastUnreadMessage(integrationId: String!, customerId: String!): Message
     totalUnreadCount(integrationId: String!, customerId: String!): Int
     messages(conversationId: String): [Message]
     unreadCount(conversationId: String): Int
