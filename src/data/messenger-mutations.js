@@ -29,7 +29,7 @@ export default {
     let uiOptions;
     let messengerData;
 
-    const { brandCode, email, isUser, name, data } = args;
+    const { brandCode, email, isUser, name, data, cachedCustomerId } = args;
 
     // find integration
     return (
@@ -40,7 +40,7 @@ export default {
           uiOptions = integration.uiOptions;
           messengerData = integration.messengerData;
 
-          return getCustomer(integration._id, email);
+          return getCustomer({ cachedCustomerId, integrationId, email });
         })
 
         // update or create customer

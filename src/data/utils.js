@@ -26,7 +26,15 @@ export const getIntegration = (brandCode, kind) =>
  * Get customer
  */
 
-export const getCustomer = (integrationId, email) => Customers.findOne({ email, integrationId });
+export const getCustomer = ({ integrationId, email, cachedCustomerId}) => {
+  if (email) {
+    return Customers.findOne({ email, integrationId });
+  }
+
+  if (cachedCustomerId) {
+    return Customers.findOne({ _id: cachedCustomerId });
+  }
+};
 
 /*
  * Create new customer

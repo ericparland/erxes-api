@@ -53,7 +53,7 @@ export const validate = (formId, submissions) =>
   });
 
 export const getOrCreateCustomer = (integrationId, email, name) =>
-  getCustomer(integrationId, email).then(customer => {
+  getCustomer({ integrationId, email }).then(customer => {
     if (!email) {
       return Promise.resolve(null);
     }

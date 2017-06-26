@@ -129,7 +129,7 @@ const typeDefs = `
 
   type Mutation {
     messengerConnect(brandCode: String!, email: String, name: String,
-      isUser: Boolean, data: JSON): MessengerConnectResponse
+      isUser: Boolean, data: JSON, cachedCustomerId: String): MessengerConnectResponse
 
     insertMessage(integrationId: String!, customerId: String!,
       conversationId: String!, message: String,
