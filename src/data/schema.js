@@ -128,7 +128,7 @@ const typeDefs = `
   }
 
   type Mutation {
-    messengerConnect(brandCode: String!, email: String!, name: String,
+    messengerConnect(brandCode: String!, email: String, name: String,
       isUser: Boolean, data: JSON): MessengerConnectResponse
 
     insertMessage(integrationId: String!, customerId: String!,
@@ -139,6 +139,7 @@ const typeDefs = `
     notify: String
 
     readConversationMessages(conversationId: String): String
+    saveCustomerEmail(customerId: String!, email: String!): String
 
     formConnect(brandCode: String!, formCode: String!): FormConnectResponse
 

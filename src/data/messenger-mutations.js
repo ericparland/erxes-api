@@ -42,14 +42,10 @@ export default {
 
           return getCustomer(integration._id, email);
         })
+
         // update or create customer
         .then(customer => {
           const now = new Date();
-
-          // check email
-          if (!email) {
-            throw new Error('Email is required');
-          }
 
           // update customer
           if (customer) {
@@ -82,6 +78,7 @@ export default {
           // create new customer
           return createCustomer({ integrationId, email, isUser, name }, data);
         })
+
         // return integrationId, customerId
         .then(customer => ({
           integrationId,
@@ -89,6 +86,7 @@ export default {
           messengerData,
           customerId: customer._id,
         }))
+
         // catch exception
         .catch(error => {
           console.log(error); // eslint-disable-line no-console
@@ -110,40 +108,43 @@ export default {
         customerId,
         message,
       })
-        // create message
-        .then(id =>
-          createMessage({
-            conversationId: id,
-            customerId,
-            content: message,
-            attachments,
-          }),
-        )
-        .then(msg => {
-          Conversations.update(
-            { _id: msg.conversationId },
-            {
-              $set: {
-                // if conversation is closed then reopen it.
-                status: CONVERSATION_STATUSES.OPEN,
 
-                // empty read users list then it will be shown as unread again
-                readUserIds: [],
-              },
+      // create message
+      .then(id =>
+        createMessage({
+          conversationId: id,
+          customerId,
+          content: message,
+          attachments,
+        }),
+      )
+
+      .then(msg => {
+        Conversations.update(
+          { _id: msg.conversationId },
+          {
+            $set: {
+              // if conversation is closed then reopen it.
+              status: CONVERSATION_STATUSES.OPEN,
+
+              // empty read users list then it will be shown as unread again
+              readUserIds: [],
             },
-            () => {},
-          );
+          },
+          () => {},
+        );
 
-          // publish change
-          pubsub.publish('newMessagesChannel', msg);
-          pubsub.publish('notification');
+        // publish change
+        pubsub.publish('newMessagesChannel', msg);
+        pubsub.publish('notification');
 
-          return msg;
-        })
-        // catch exception
-        .catch(error => {
-          console.log(error); // eslint-disable-line no-console
-        })
+        return msg;
+      })
+
+      // catch exception
+      .catch(error => {
+        console.log(error); // eslint-disable-line no-console
+      })
     );
   },
 
@@ -167,5 +168,12 @@ export default {
           pubsub.publish('notification');
         })
     );
+  },
+
+  /*
+   * save customer's email
+   */
+  saveCustomerEmail(root, args) {
+    return Customers.update({ _id: args.customerId }, { email: args.email })
   },
 };
