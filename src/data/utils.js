@@ -1,6 +1,14 @@
 import nodemailer from 'nodemailer';
 
-import { Messages, Conversations, Brands, Customers, Integrations } from './connectors';
+import {
+  Users,
+  Messages,
+  Conversations,
+  Brands,
+  Customers,
+  Integrations,
+  EngageMessages,
+} from './connectors';
 
 export const CONVERSATION_STATUSES = {
   NEW: 'new',
@@ -163,14 +171,15 @@ export const createConversationWithMessage = doc => {
       integrationId,
       content,
     })
-      // create message
-      .then(conversationId =>
-        createMessage({
-          conversationId,
-          customerId,
-          message: content,
-        }),
-      )
+
+    // create message
+    .then(conversationId =>
+      createMessage({
+        conversationId,
+        customerId,
+        message: content,
+      }),
+    )
   );
 };
 
@@ -216,3 +225,115 @@ export const sendEmail = ({ toEmails, fromEmail, title, content }) => {
     });
   });
 };
+
+/*
+ * this class will be used in messagerConnect and it will create conversations
+ * when visitor messenger connect
+ */
+
+export class EngageVisitorMessage {
+  constructor({ brandCode, customer, integration, browserInfo }) {
+    this.brandCode = brandCode;
+    this.customer = customer;
+    this.integration = integration;
+    this.browserInfo = browserInfo;
+  }
+
+  replaceKeys({ content, user }) {
+    let result = content;
+
+    // replace customer fields
+    result = result.replace(/{{\s?customer.name\s?}}/gi, this.customer.name);
+    result = result.replace(/{{\s?customer.email\s?}}/gi, this.customer.email);
+
+    // replace user fields
+    result = result.replace(/{{\s?user.fullName\s?}}/gi, user.fullName);
+    result = result.replace(/{{\s?user.position\s?}}/gi, user.position);
+    result = result.replace(/{{\s?user.email\s?}}/gi, user.email);
+
+    return result;
+  }
+
+  createConversation({ user, messenger }) {
+    // replace keys in content
+    const replacedContent = this.replaceKeys({
+      content: messenger.content,
+      user,
+    });
+
+    // create conversation
+    createConversation({
+      customerId: this.customer._id,
+      integrationId: this.integration._id,
+      content: replacedContent,
+    })
+
+    // create message
+    .then(conversationId =>
+      createMessage({
+        engageData: messenger,
+        conversationId,
+        userId: user._id,
+        customerId: this.customer._id,
+        content: replacedContent,
+      })
+    )
+  }
+
+  checkRules(rules) {
+    let passedAllRules = true;
+
+    const { browserLanguage } = this.browserInfo;
+
+    rules.forEach((rule) => {
+      if (rule.kind === 'browserLanguage' && browserLanguage !== rule.value) {
+        passedAllRules = false;
+        return;
+      }
+    });
+
+    return passedAllRules;
+  }
+
+  run() {
+    Brands.findOne({ code: this.brandCode })
+
+      // find engage messages
+      .then(brand =>
+        EngageMessages.find({
+          'messenger.brandId': brand._id,
+          kind: 'visitorAuto',
+          method: 'messenger',
+          isLive: true,
+          customerIds: { $nin: [this.customer._id] },
+        }))
+
+      .then(messages =>
+        messages.forEach(message => {
+
+          // add given customer to customerIds list
+          EngageMessages.update(
+            { _id: message._id },
+            { $push: { customerIds: this.customer._id } },
+            {}, () => {}
+          );
+
+          Users.findOne({ _id: message.fromUserId }).then(user => {
+
+            // check for rules
+            if (this.checkRules(message.messenger.rules)) {
+
+              // if given visitor is matched with given condition then create
+              // conversations
+              this.createConversation({ user, messenger: message.messenger })
+            }
+          })
+        })
+      )
+
+      // catch exception
+      .catch(error => {
+        console.log(error); // eslint-disable-line no-console
+      })
+  }
+}

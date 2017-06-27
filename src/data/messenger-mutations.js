@@ -6,6 +6,7 @@ import {
   getOrCreateConversation,
   createMessage,
   createCustomer,
+  EngageVisitorMessage,
   CONVERSATION_STATUSES,
 } from './utils';
 
@@ -25,25 +26,24 @@ export default {
    * create or update customer info, when connection establish
    */
   messengerConnect(root, args) {
-    let integrationId;
+    let integration;
     let uiOptions;
     let messengerData;
 
-    const { brandCode, email, isUser, name, data, cachedCustomerId } = args;
+    const { brandCode, email, isUser, name, data, browserInfo, cachedCustomerId } = args;
 
     // find integration
     return (
       getIntegration(brandCode, 'messenger')
         // find customer
-        .then(integration => {
-          integrationId = integration._id;
-          uiOptions = integration.uiOptions;
-          messengerData = integration.messengerData;
+        .then(integ => {
+          integration = integ;
+          uiOptions = integ.uiOptions;
+          messengerData = integ.messengerData;
 
-          return getCustomer({ cachedCustomerId, integrationId, email });
+          return getCustomer({ cachedCustomerId, integrationId: integ._id, email });
         })
 
-        // update or create customer
         .then(customer => {
           const now = new Date();
 
@@ -76,16 +76,33 @@ export default {
           }
 
           // create new customer
-          return createCustomer({ integrationId, email, isUser, name }, data);
+          return createCustomer(
+            { integrationId: integration._id, email, isUser, name },
+            data
+          );
         })
 
         // return integrationId, customerId
-        .then(customer => ({
-          integrationId,
-          uiOptions,
-          messengerData,
-          customerId: customer._id,
-        }))
+        .then(customer => {
+          // if visitor then check for engage auto messages
+          if (!email) {
+            const engageHelper = new EngageVisitorMessage({
+              brandCode,
+              customer,
+              integration,
+              browserInfo,
+            });
+
+            engageHelper.run();
+          }
+
+          return {
+            integrationId: integration._id,
+            uiOptions,
+            messengerData,
+            customerId: customer._id,
+          }
+        })
 
         // catch exception
         .catch(error => {
