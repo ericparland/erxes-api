@@ -76,18 +76,11 @@ export default {
     user(message) {
       return Users.findOne({ _id: message.userId });
     },
+  },
 
-    engageData(message) {
-      const engageData = message.engageData;
-
-      if (engageData) {
-        return {
-          fromUser: Users.findOne({ _id: engageData.fromUserId }),
-          ...engageData,
-        }
-      }
-
-      return {};
+  EngageData: {
+    fromUser(engageData) {
+      return Users.findOne({ _id: engageData.fromUserId })
     },
   },
 

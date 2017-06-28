@@ -28,6 +28,15 @@ const typeDefs = `
     size: Int
   }
 
+  type EngageData {
+    brandId: String
+    content: String
+    fromUserId: String
+    fromUser: User
+    kind: String
+    sentAs: String
+  }
+
   input AttachmentInput {
     url: String
     name: String
@@ -70,7 +79,7 @@ const typeDefs = `
     createdAt: Date
     attachments: [Attachment]
     internal: Boolean
-    engageData: JSON
+    engageData: EngageData
   }
 
   type Field {
