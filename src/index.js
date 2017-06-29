@@ -25,7 +25,13 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
-app.use('/graphql', graphqlExpress({ schema }));
+app.use('/graphql', graphqlExpress((req) => ({
+  schema,
+  context: {
+    remoteAddress: req.connection.remoteAddress,
+  },
+})));
+
 app.use('/graphiql', graphiqlExpress({ endpointURL: '/graphql' }));
 
 const server = createServer(app);

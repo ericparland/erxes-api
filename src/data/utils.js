@@ -1,3 +1,4 @@
+import requestify from 'requestify';
 import nodemailer from 'nodemailer';
 
 import {
@@ -232,11 +233,14 @@ export const sendEmail = ({ toEmails, fromEmail, title, content }) => {
  */
 
 export class EngageVisitorMessage {
-  constructor({ brandCode, customer, integration, browserInfo }) {
+  constructor({ brandCode, customer, integration, browserInfo, remoteAddress }) {
     this.brandCode = brandCode;
     this.customer = customer;
     this.integration = integration;
     this.browserInfo = browserInfo;
+    this.remoteAddress = remoteAddress;
+
+    this.getLocationInfo()
   }
 
   replaceKeys({ content, user }) {
@@ -280,19 +284,42 @@ export class EngageVisitorMessage {
     )
   }
 
+  getIP() {
+    if (process.env.NODE_ENV === 'production') {
+      return Promise.resolve(this.remoteAddress);
+    }
+
+    return requestify.get('https://jsonip.com').then(res => JSON.parse(res.body).ip);
+  }
+
+  getLocationInfo() {
+    return this.getIP().then(ip =>
+      requestify.get(`http://ipinfo.io/${ip}/json`).then((response) => {
+        const data = JSON.parse(response.body);
+
+        return {
+          city: data.city,
+          country: data.country,
+        };
+      })
+    );
+  }
+
   checkRules(rules) {
-    let passedAllRules = true;
+    return this.getLocationInfo().then(({ city, country }) => {
+      let passedAllRules = true;
 
-    const { browserLanguage } = this.browserInfo;
+      const { browserLanguage } = this.browserInfo;
 
-    rules.forEach((rule) => {
-      if (rule.kind === 'browserLanguage' && browserLanguage !== rule.value) {
-        passedAllRules = false;
-        return;
-      }
-    });
+      rules.forEach((rule) => {
+        if (rule.kind === 'browserLanguage' && browserLanguage !== rule.value) {
+          passedAllRules = false;
+          return;
+        }
+      });
 
-    return passedAllRules;
+      return passedAllRules;
+    })
   }
 
   run() {

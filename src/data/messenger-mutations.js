@@ -25,7 +25,7 @@ export default {
   /*
    * create or update customer info, when connection establish
    */
-  messengerConnect(root, args) {
+  messengerConnect(root, args, { remoteAddress }) {
     let integration;
     let uiOptions;
     let messengerData;
@@ -90,6 +90,7 @@ export default {
               brandCode,
               customer,
               integration,
+              remoteAddress,
               browserInfo,
             });
 
